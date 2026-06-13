@@ -276,3 +276,45 @@ def prmse(actualCoord, estCoord, noPersonKey, penalty):
     return np.sqrt(sumSE/rows)
 
 
+# Synthesize multi-target RSS measurements via linear superposition.
+#
+# Given an empty-room baseline E and k single-target snapshots I_0 … I_{k-1},
+# compute all 2^k combinations:
+#   synth_S = E + Σ_{j ∈ S} (I_j - E)   for each subset S encoded as a bitmask.
+#
+# Sentinel rule: links where emptyRSS > -10 (no valid baseline) are forced to
+# 127 in every output row.  Links where I_j > -10 contribute zero delta for
+# that target on that link; other targets may still contribute.
+#
+# Inputs:
+#   emptyRSS      : np.ndarray (numLinks,) float — empty-room baseline;
+#                   use 127.0 for links never measured during calibration.
+#   targetRSSList : list of k np.ndarray (numLinks,) — one RSS snapshot per
+#                   target location (floats; 127.0 for unmeasured links).
+# Output:
+#   list of (bitmask, synth_array) tuples, length 2**k, ordered bitmask 0…2^k-1.
+#   Each synth_array is np.ndarray (numLinks,) float, clipped to [-127, -1]
+#   with 127.0 preserved for links missing from the empty baseline.
+def synthMultiTargetRSS(emptyRSS, targetRSSList):
+    k         = len(targetRSSList)
+    emptyMask = emptyRSS > -10   # True where baseline is a sentinel
+
+    # Pre-compute per-target deltas; zero wherever either measurement is missing
+    deltaList = []
+    for I_j in targetRSSList:
+        I_j_arr    = np.array(I_j, dtype=float)
+        targetMask = I_j_arr > -10
+        delta      = np.where(emptyMask | targetMask, 0.0, I_j_arr - emptyRSS)
+        deltaList.append(delta)
+
+    results = []
+    for mask in range(2**k):
+        synth = emptyRSS.astype(float).copy()
+        for j in range(k):
+            if mask & (1 << j):
+                synth += deltaList[j]
+        synth              = np.clip(synth, -127.0, -1.0)
+        synth[emptyMask]   = 127.0   # restore sentinel where baseline is missing
+        results.append((mask, synth))
+    return results
+
