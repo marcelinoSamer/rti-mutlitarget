@@ -1,24 +1,10 @@
 #! /usr/bin/env python
 
-#
-# LICENSE:
-# Copyright (C) 2016  Neal Patwari
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Author: neal.patwari@gmail.com
-#
+
+
+# Author: marcelinosamer000@gmail.com && Claude-Code
+# Based on listenx.py by Neal Patwari, neal.patwari@gmail.com
+
 # Purpose:
 #   Synthesize multi-target RSS measurements from single-target recordings.
 #   Uses the linear superposition principle: each target's contribution is an
