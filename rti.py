@@ -83,7 +83,7 @@ def linkNumForTxRxChLists(tx, rx, ch, nodeList, channelList):
 
 # Convert link number to Tx and Rx numbers
 def txRxForLinkNum(linknum, nodes):
-    tx    = linknum / (nodes-1)
+    tx    = linknum // (nodes-1)
     rx    = linknum % (nodes-1)
     if (rx >= tx): 
         rx+=1
@@ -95,9 +95,9 @@ def txRxForLinkNum(linknum, nodes):
 def txRxChForLinkNum(linknum, nodeList, channelList):
     nodes   = len(nodeList)
     links   = nodes*(nodes-1)
-    ch_enum = linknum / links
+    ch_enum = linknum // links
     remLN   = linknum % links
-    tx_enum = remLN / (nodes-1)
+    tx_enum = remLN // (nodes-1)
     rx_enum = remLN % (nodes-1)
     if (rx_enum >= tx_enum):
         rx_enum+=1
@@ -117,7 +117,7 @@ def calcGridPixelCoords(personLL, personUR, delta_p):
     pixels = cols * len(yVals)  # len(yVals) is the number of rows of pixels
 
     # fill the first row, then the 2nd row, etc.
-    pixelCoords = np.array([[xVals[i%cols], yVals[i/cols]] for i in range(pixels)])
+    pixelCoords = np.array([[xVals[i%cols], yVals[i//cols]] for i in range(pixels)])
 
     return pixelCoords, xVals, yVals
 
@@ -154,9 +154,8 @@ def plotImage(image, figNumber, sensorCoords, imageExtent, vmaxval, units, time_
         plt.xlabel('X Coordinate (' + units + ')')
     else:
         plt.xlabel('X Coordinate (' + units + ') at time ' + str(time_ms))
-    if (actualCoord != None):
-        if (len(actualCoord) > 0):
-            plt.text(actualCoord[0], actualCoord[1],'X', horizontalalignment='center', verticalalignment='center')
+    if len(actualCoord) > 0:
+        plt.text(actualCoord[0], actualCoord[1],'X', horizontalalignment='center', verticalalignment='center')
     plt.draw()
 
 
@@ -249,10 +248,10 @@ def calcActualPosition(t_ms, pivotCoords, pathInd, startPathTime, speed):
         actCoord  = []
     else:
        point_real = (t_ms-startPathTime) * speed
-       point_int  = np.floor(point_real)
+       point_int  = int(np.floor(point_real))
        point_frac = point_real - point_int
-       prevCoord  = pivotCoords[pathInd[point_int],:]
-       nextCoord  = pivotCoords[pathInd[point_int + 1],:]    
+       prevCoord  = pivotCoords[int(pathInd[point_int]),:]
+       nextCoord  = pivotCoords[int(pathInd[point_int + 1]),:]
        actCoord   = prevCoord*(1-point_frac) + nextCoord*point_frac
     return actCoord
 
@@ -314,7 +313,7 @@ def synthMultiTargetRSS(emptyRSS, targetRSSList):
             if mask & (1 << j):
                 synth += deltaList[j]
         synth              = np.clip(synth, -127.0, -1.0)
-        synth[emptyMask]   = 127.0   # restore sentinel where baseline is missing
+        synth[emptyMask]   = 127  # invalid empty baseline — no synthesis possible on this link
         results.append((mask, synth))
     return results
 

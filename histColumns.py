@@ -73,10 +73,10 @@ streams     = len(linkCombosToPlot)
 if files == 0:
     sys.exit('Usage: histColumns.py -f file1.txt -f file2.txt ... -l "[1,2,3]" ...')
 
-print "Plotting each file in a subplot from top to bottom:" 
-print fileList
-print "Plotting links:"
-print linkCombosToPlot
+print ("Plotting each file in a subplot from top to bottom:") 
+print (fileList)
+print ("Plotting links:")
+print (linkCombosToPlot)
 
 # Convert the [tx,rx,ch] combos into column numbers
 linkNumList = []

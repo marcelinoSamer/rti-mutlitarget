@@ -69,6 +69,20 @@ for o, a in myopts:
 if printOption:
     print (fin)
 
+# If the input file is already in the pre-processed 721-column space-separated
+# format (i.e., output of a previous listenx run), pass it through unchanged.
+if file_method == "file":
+    first_line = fin.readline()
+    if ', ' not in first_line:
+        sys.stdout.write(first_line)
+        sys.stdout.flush()
+        for line in fin:
+            sys.stdout.write(line)
+            sys.stdout.flush()
+        fin.close()
+        sys.exit(0)
+    fin.seek(0)  # rewind: file is raw gateway format, fall through to normal parsing
+
 # Constants calculated from the inputs
 nodeList        = range(1, numNodes+1)   # Xandem nodes are 1...10
 numLinks        = numNodes*(numNodes-1)*numChs
@@ -76,7 +90,7 @@ channelList     = range(numChs)
 numLines        = numNodes*numChs
 
 # remove junk from start of file.
-for i in range(startSkip): 
+for i in range(startSkip):
     line        = fin.readline()
 
 # Use the first line to determine the starting time

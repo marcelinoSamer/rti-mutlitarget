@@ -182,14 +182,20 @@ sumRSS         = np.zeros(numLinks)
 countCalLines  = np.zeros(numLinks)
 keepReading    = True
 while keepReading:
-    print "Counter = " + str(counter)
+    print ("Counter = " + str(counter))
     line = infile.readline()
     # If at the "end of file", keep reading if reading from stdin.
     if not line:
         keepReading = fromStdin
         continue
     while line[-1] != '\n':   # If line is incomplete, add to it.
-        line += infile.readline()
+        more = infile.readline()
+        if not more:           # EOF mid-line — treat as end of data
+            keepReading = fromStdin
+            break
+        line += more
+    if line[-1] != '\n':
+        continue
         
     # Get the integers from the line string
     lineList    = [int(i) for i in line.split()]
@@ -234,7 +240,7 @@ while keepReading:
     # the current coordinate estimate to the output file.
     if counter >= calLines:
         
-        print "RSS on link 1 = " + str(rss[0])
+        print ("RSS on link 1 = " + str(rss[0]))
         
         # Compute difference between calVec and current RSS measurement
         rss.shape    = (channels, numPairs)
@@ -303,7 +309,7 @@ while keepReading:
 if actualKnown:
     VRTI_RMSE = np.sqrt(np.mean(np.array(VRTI_err_list)**2))
     RTI_RMSE  = np.sqrt(np.mean(np.array(RTI_err_list)**2))
-    print "VRTI RMSE = " + str(VRTI_RMSE)
-    print "RTI RMSE = " + str(RTI_RMSE)
+    print ("VRTI RMSE = " + str(VRTI_RMSE))
+    print ("RTI RMSE = " + str(RTI_RMSE))
 
 

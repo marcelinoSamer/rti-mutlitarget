@@ -22,6 +22,18 @@
 #   Mode B — one file per target location, averaged over post-calibration rows:
 #     python synth_multi_target.py -e empty.txt -i tgt1.txt -i tgt2.txt -o out.txt
 #
+
+
+
+#                               EXAMPLE USAGE:
+# Mode A — pick specific rows as target snapshots
+# python3 synth_multi_target.py -e basement/basement_listenx_out_1.txt \ -f basement/basement_listenx_out_1.txt -t 100 -t 200 -o out.txt
+# Mode B — one file per target location
+# python3 synth_multi_target.py -e basement/basement_listenx_out_1.txt \
+#    -i basement/basement_listenx_out_1.txt -i basement/basement_listenx_out_2.txt -o out.txt
+
+
+
 #   Options:
 #     -e FILE   listenx output file used as the empty environment (required)
 #     -f FILE   listenx file containing target snapshots (Mode A)
