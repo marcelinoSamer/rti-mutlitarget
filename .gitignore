@@ -1,2 +1,6 @@
 /venv
 CODEBASE_WALKTHROUGH.md
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

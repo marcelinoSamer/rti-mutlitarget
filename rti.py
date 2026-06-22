@@ -306,14 +306,18 @@ def synthMultiTargetRSS(emptyRSS, targetRSSList):
         delta      = np.where(emptyMask | targetMask, 0.0, I_j_arr - emptyRSS)
         deltaList.append(delta)
 
+    missingPerTarget = [np.array(I_j, dtype=float) > -10 for I_j in targetRSSList]
+
     results = []
     for mask in range(2**k):
-        synth = emptyRSS.astype(float).copy()
+        synth          = emptyRSS.astype(float).copy()
+        combinedMissing = emptyMask.copy()
         for j in range(k):
             if mask & (1 << j):
-                synth += deltaList[j]
-        synth              = np.clip(synth, -127.0, -1.0)
-        synth[emptyMask]   = 127  # invalid empty baseline — no synthesis possible on this link
+                synth           += deltaList[j]
+                combinedMissing |= missingPerTarget[j]
+        synth                = np.clip(synth, -127.0, -1.0)
+        synth[combinedMissing] = 127
         results.append((mask, synth))
     return results
 

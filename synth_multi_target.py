@@ -27,7 +27,7 @@
 
 #                               EXAMPLE USAGE:
 # Mode A — pick specific rows as target snapshots
-# python3 synth_multi_target.py -e basement/basement_listenx_out_1.txt \ -f basement/basement_listenx_out_1.txt -t 100 -t 200 -o out.txt
+# python3 synth_multi_target.py -e basement/basement_listenx_out_1.txt -f basement/basement_listenx_out_1.txt -t 100 -t 200 -o out.txt
 # Mode B — one file per target location
 # python3 synth_multi_target.py -e basement/basement_listenx_out_1.txt \
 #    -i basement/basement_listenx_out_1.txt -i basement/basement_listenx_out_2.txt -o out.txt
@@ -61,25 +61,20 @@ def loadFileRows(fname):
     """Read all rows from a listenx output file.
     Returns (rows, times) where rows is a list of np.ndarray (numLinks,) int
     and times is a list of int timestamps.
-    Applies the prevRSS fill for sentinel values, mirroring rti_stub.py lines 203-205."""
-    rows    = []
-    times   = []
-    prevRSS = None
-    fin     = open(fname, 'r')
+    Raw 127 sentinel values are preserved so that per-link absence is
+    counted accurately by computeEmptyRSS and extractSnapshotFromFile."""
+    rows  = []
+    times = []
+    fin   = open(fname, 'r')
     for line in fin:
         line = line.strip()
         if not line:
             continue
-        vals   = [int(x) for x in line.split()]
+        vals    = [int(x) for x in line.split()]
         time_ms = vals.pop()
-        rss    = np.array(vals, dtype=int)
-        if prevRSS is not None:
-            for i in range(len(rss)):
-                if rss[i] > MISSING_THRESH:
-                    rss[i] = prevRSS[i]
-        rows.append(rss.copy())
+        rss     = np.array(vals, dtype=int)
+        rows.append(rss)
         times.append(time_ms)
-        prevRSS = rss.copy()
     fin.close()
     return rows, times
 
