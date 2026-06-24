@@ -28,8 +28,7 @@ def run_sa(Q, cfg):
         beta_max   = cfg.beta_max,
     )
 
-    best_idx    = int(np.argmin(response.energies))
-    best_sample = response.samples[best_idx]
-    best_energy = float(response.energies[best_idx])
+    best_sample = {k: int(v) for k, v in response.first.sample.items()}
+    best_energy = float(response.first.energy)
 
     return best_sample, best_energy

@@ -35,6 +35,46 @@ def decode_solution(best_sample, xVals, yVals):
     return _cluster_to_coords(grid, xVals, yVals)
 
 
+def decode_row_solution(best_sample, cal, inversion, xVals, yVals, cfg):
+    """Decode a target-level QUBO solution to (x, y) location estimates.
+
+    build_qubo variables are indexed 0..K-1 (one per target, not per row).
+    For each selected target j (x_j=1), runs RTI MAP on that target's
+    single-target RSS template and returns the image peak as the location.
+
+    Args
+    ----
+    best_sample : dict { qubo_index: 0_or_1 }  SA solution from run_sa()
+    cal         : CalibrationState              provides score_vec()
+    inversion   : np.ndarray (numPixels, numPairs)
+    xVals, yVals: pixel grid coordinate arrays
+    cfg         : Config                        provides personInAreaThreshold
+
+    Returns
+    -------
+    estimates : list of (float, float)  one (x, y) per detected target.
+    """
+    import rti as _rti
+    from sa_localization.qubo import get_synth_targets
+
+    synth_targets = get_synth_targets()
+    if synth_targets is None:
+        return []
+
+    targets = sorted(synth_targets.keys())  # [0, 1, 2, ...K-1] target indices
+
+    estimates = []
+    for ii, j in enumerate(targets):
+        if best_sample.get(ii, 0) != 1:
+            continue
+        score = cal.score_vec(synth_targets[j])
+        image = _rti.callRTI(score, inversion, len(xVals), len(yVals))
+        if image.max() > cfg.personInAreaThreshold:
+            x, y = _rti.imageMaxCoord(image, xVals, yVals)
+            estimates.append((x, y))
+    return estimates
+
+
 def _cluster_to_coords(grid, xVals, yVals):
     """Return centroids of connected components in a binary occupancy grid."""
     from scipy.ndimage import label

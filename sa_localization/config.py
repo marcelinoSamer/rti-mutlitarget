@@ -22,10 +22,19 @@ class Config:
     beta_min:         float = 0.1
     beta_max:         float = 10.0
 
+    # --- QUBO balance ---
+    # alpha in [0, 1] blends linear and quadratic terms:
+    #   diagonal   Q[i,i] = -alpha         * var(row_i)
+    #   quadratic  Q[i,j] = (1 - alpha)    * cosine_sim(row_i, row_j)
+    # alpha = 1 → pure variance selection (no diversity penalty)
+    # alpha = 0 → pure diversity selection (no detectiveness term)
+    alpha:            float = 0.5
+
     # --- detection threshold (mirrors rti_stub.py) ---
     personInAreaThreshold: float = 2.1
 
     # --- I/O paths ---
+    synth_file:       str = 'out.txt'
     coord_file:       str = 'basement/sensor_coords_basement_m.txt'
     pivot_file:       str = 'basement/pivot_coords_basement_m.txt'
     path_file:        str = 'basement/path_basement_1_f.txt'

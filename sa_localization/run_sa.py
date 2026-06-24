@@ -20,7 +20,7 @@ from sa_localization.data_io     import (load_sensor_coords, load_pivot_coords,
 from sa_localization.calibration import CalibrationState
 from sa_localization.qubo        import build_qubo
 from sa_localization.solver      import run_sa
-from sa_localization.decode      import decode_solution
+from sa_localization.decode      import decode_row_solution
 from sa_localization.evaluate    import RunningPRMSE
 
 # ---- CLI -----------------------------------------------------------------
@@ -82,9 +82,9 @@ for line in fin:
     score = cal.score_vec(rss)
 
     try:
-        Q                   = build_qubo(score, inversion, xVals, yVals, cfg)
+        Q                   = build_qubo(score, cal, inversion, xVals, yVals, cfg)
         best_sample, energy = run_sa(Q, cfg)
-        estimates           = decode_solution(best_sample, xVals, yVals)
+        estimates           = decode_row_solution(best_sample, cal, inversion, xVals, yVals, cfg)
     except NotImplementedError:
         image     = rti.callRTI(score, inversion, len(xVals), len(yVals))
         energy    = float('nan')
