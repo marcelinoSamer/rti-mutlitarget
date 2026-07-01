@@ -35,6 +35,7 @@ class Config:
 
     # --- I/O paths ---
     synth_file:       str = 'out.txt'
+    truth_file:       str = 'target_truth.txt'   # real ground-truth target positions
     coord_file:       str = 'basement/sensor_coords_basement_m.txt'
     pivot_file:       str = 'basement/pivot_coords_basement_m.txt'
     path_file:        str = 'basement/path_basement_1_f.txt'

@@ -62,6 +62,25 @@ def load_synth_rows(fname):
     return rss_rows, bitmasks
 
 
+def load_target_truth(fname):
+    """Load real ground-truth target positions written by generate_synth.py.
+
+    File format: one "j x y" line per target (j = target index).
+
+    Returns:
+        dict { int j : (float x, float y) }
+    """
+    known = {}
+    with open(fname, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            j, x, y = line.split()
+            known[int(j)] = (float(x), float(y))
+    return known
+
+
 def _active_targets(mask, num_targets):
     """Return list of target indices that are present in this bitmask."""
     return [j for j in range(num_targets) if mask & (1 << j)]
@@ -159,19 +178,10 @@ def run_benchmark(save=False):
     rss_rows, bitmasks = load_synth_rows(cfg.synth_file)
     num_targets = int(np.ceil(np.log2(max(bitmasks) + 1)))
 
-    # Derive known target locations from single-target rows (no hardcoded coords)
-    known_locs = {}
-    for j in range(num_targets):
-        single_mask = 1 << j
-        for rss, mask in zip(rss_rows, bitmasks):
-            if mask == single_mask:
-                score = cal.score_vec(rss)
-                image = rti.callRTI(score, inversion, len(xVals), len(yVals))
-                x, y  = rti.imageMaxCoord(image, xVals, yVals)
-                known_locs[j] = (x, y)
-                break
+    # Real ground-truth target locations (walk-path interpolation, NOT RTI peak)
+    known_locs = load_target_truth(cfg.truth_file)
 
-    print("Known target locations:")
+    print("Known target locations (real ground truth):")
     for j, loc in known_locs.items():
         print("  Target {:d}: ({:.3f}, {:.3f}) m".format(j, loc[0], loc[1]))
 

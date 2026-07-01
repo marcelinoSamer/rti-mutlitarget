@@ -30,10 +30,19 @@ CAL_LINES   = 50
 K           = 6
 
 # How to pick the K snapshot rows from post-calibration frames:
-#   'uniform' — evenly spaced across all post-cal rows
+#   'uniform' — evenly spaced across all eligible (in-walk-window) frames
 #   'random'  — random sample (reproducible with RANDOM_SEED)
 SELECTION   = 'uniform'
 RANDOM_SEED = 42
+
+# Ground-truth walk parameterization (mirrors rti_stub.py / Config). Only frames
+# whose timestamp falls inside the walk window are eligible as target snapshots,
+# so every target has a REAL (interpolated walk) position — not an RTI-peak guess.
+PIVOT_FILE      = 'basement/pivot_coords_basement_m.txt'
+PATH_FILE       = 'basement/path_basement_1_f.txt'
+START_PATH_TIME = 56000.0      # ms — when subject hits first waypoint
+SPEED           = 1.0 / 8000.0 # pivot points per millisecond
+TRUTH_FILE      = 'target_truth.txt'  # sidecar: "j x y" real ground truth per target
 # ─────────────────────────────────────────────────────────────────────────────
 
 MISSING_THRESH = -10
@@ -86,26 +95,49 @@ def _write_output(results, fout):
 
 def main():
     print("Loading '{}' …".format(DATA_FILE))
-    rows, _  = _load_rows(DATA_FILE)
-    post_cal = rows[CAL_LINES:]
-    n_post   = len(post_cal)
+    rows, times = _load_rows(DATA_FILE)
+    post_cal    = rows[CAL_LINES:]
+    post_times  = times[CAL_LINES:]
 
-    if n_post < K:
-        sys.exit("Error: only {:d} post-cal rows available; need K={:d}. "
-                 "Reduce K or use a longer recording.".format(n_post, K))
+    # Restrict candidates to frames inside the walk window, so each target
+    # snapshot maps to a real interpolated position via calcActualPosition.
+    pivots        = np.loadtxt(PIVOT_FILE)
+    path          = np.loadtxt(PATH_FILE)
+    end_path_time = START_PATH_TIME + (len(path) - 1) / SPEED
+    eligible      = [i for i, t in enumerate(post_times)
+                     if START_PATH_TIME <= t < end_path_time]
+    n_elig        = len(eligible)
+    print("Walk window: [{:.0f}, {:.0f}) ms — {:d} eligible post-cal frames.".format(
+        START_PATH_TIME, end_path_time, n_elig))
 
-    # Select K snapshot indices within post-calibration rows
+    if n_elig < K:
+        sys.exit("Error: only {:d} in-window frames available; need K={:d}. "
+                 "Reduce K or use a longer recording.".format(n_elig, K))
+
+    # Pick K positions among the eligible (in-window) frames
     if SELECTION == 'uniform':
-        step    = (n_post - 1) / max(K - 1, 1)
-        indices = [int(round(i * step)) for i in range(K)]
+        step    = (n_elig - 1) / max(K - 1, 1)
+        picks   = [int(round(i * step)) for i in range(K)]
     elif SELECTION == 'random':
         rng     = np.random.default_rng(RANDOM_SEED)
-        indices = sorted(int(x) for x in rng.choice(n_post, size=K, replace=False))
+        picks   = sorted(int(x) for x in rng.choice(n_elig, size=K, replace=False))
     else:
         sys.exit("Unknown SELECTION '{}'. Use 'uniform' or 'random'.".format(SELECTION))
 
+    indices     = [eligible[p] for p in picks]   # indices into post_cal
     abs_indices = [CAL_LINES + i for i in indices]
     print("Selected {:d} target snapshots at file rows: {}".format(K, abs_indices))
+
+    # Real ground-truth position for each target (bit j ↔ target_list[j])
+    import rti as _rti
+    true_locs = {}
+    for j, i in enumerate(indices):
+        pos = _rti.calcActualPosition(post_times[i], pivots, path,
+                                      START_PATH_TIME, SPEED)
+        true_locs[j] = (float(pos[0]), float(pos[1]))
+    print("Ground-truth target positions (from walk path, not RTI):")
+    for j in sorted(true_locs):
+        print("  Target {:d}: ({:.3f}, {:.3f}) m".format(j, *true_locs[j]))
 
     # Compute empty-room baseline from calibration rows
     print("Computing empty baseline from first {:d} rows …".format(CAL_LINES))
@@ -122,6 +154,12 @@ def main():
     # Write output
     with open(OUT_FILE, 'w') as f:
         _write_output(results, f)
+
+    # Write real ground-truth sidecar: one "j x y" line per target
+    with open(TRUTH_FILE, 'w') as f:
+        for j in sorted(true_locs):
+            f.write("{:d} {:.6f} {:.6f}\n".format(j, *true_locs[j]))
+    print("Wrote ground truth for {:d} targets to '{}'.".format(len(true_locs), TRUTH_FILE))
 
     print("Done. Written {:d} rows to '{}'.".format(len(results), OUT_FILE))
     print("  Columns : 720 RSS values + 1 bitmask = 721")

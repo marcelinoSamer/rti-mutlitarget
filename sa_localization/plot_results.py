@@ -33,7 +33,7 @@ from sa_localization.data_io     import load_listenx_file, load_sensor_coords
 from sa_localization.calibration import CalibrationState
 from sa_localization.qubo        import build_qubo, get_synth_targets
 from sa_localization.solver      import run_sa
-from sa_localization.benchmark   import load_synth_rows
+from sa_localization.benchmark   import load_synth_rows, load_target_truth
 
 SYNTH_FILE = 'out.txt'
 CAL_FILE   = 'basement/basement_listenx_out_1.txt'
@@ -182,17 +182,8 @@ def main():
     rss_rows, bitmasks = load_synth_rows(SYNTH_FILE)
     num_targets = int(np.ceil(np.log2(max(bitmasks) + 1)))
 
-    # Derive known locations from single-target rows
-    known_locs = {}
-    for j in range(num_targets):
-        single_mask = 1 << j
-        for rss, mask in zip(rss_rows, bitmasks):
-            if mask == single_mask:
-                score       = cal.score_vec(rss)
-                image       = rti.callRTI(score, inversion, len(xVals), len(yVals))
-                x, y        = rti.imageMaxCoord(image, xVals, yVals)
-                known_locs[j] = (x, y)
-                break
+    # Real ground-truth target locations (walk-path interpolation, NOT RTI peak)
+    known_locs = load_target_truth(cfg.truth_file)
 
     for row_idx, (rss, true_mask) in enumerate(zip(rss_rows, bitmasks)):
         score          = cal.score_vec(rss)

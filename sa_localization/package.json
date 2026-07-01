@@ -1,0 +1,33 @@
+{
+  "name": "sa-localization",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SA-based multi-target RTI localization — npm script hub wrapping the Python tooling.",
+  "scripts": {
+    "start": "npm run plots",
+
+    "plots": "npm run plots:rows && npm run plots:bench",
+    "plots:rows": "cd .. && .venv/bin/python sa_localization/plot_results.py --save",
+    "plots:bench": "cd .. && .venv/bin/python sa_localization/benchmark.py --save",
+
+    "synth": "cd .. && .venv/bin/python sa_localization/generate_synth.py",
+    "pipeline": "npm run synth && npm run plots",
+
+    "run": "cd .. && .venv/bin/python sa_localization/run_sa.py",
+    "run:basement1": "cd .. && .venv/bin/python sa_localization/run_sa.py -i basement/basement_listenx_out_1.txt",
+    "run:basement2": "cd .. && .venv/bin/python sa_localization/run_sa.py -i basement/basement_listenx_out_2.txt",
+
+    "clean": "rm -rf plots",
+    "clean:all": "rm -rf plots sa_estimates.txt && cd .. && rm -f out.txt",
+
+    "setup": "cd .. && python3.12 -m venv .venv && .venv/bin/pip install --upgrade pip && .venv/bin/pip install numpy matplotlib scipy openjij",
+    "python:check": "cd .. && .venv/bin/python -c \"import openjij, numpy, matplotlib, scipy; print('env OK:', __import__('sys').version)\"",
+
+    "list:plots": "ls -1 plots | wc -l && ls -1 plots | head -5"
+  },
+  "config": {
+    "python": "../.venv/bin/python",
+    "projectRoot": "..",
+    "plotsDir": "plots"
+  }
+}
